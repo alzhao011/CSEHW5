@@ -5,7 +5,7 @@
 - **Reporting app:** https://reporting.alansdomain.xyz
 - **Test site (data source):** https://test.alansdomain.xyz
 - **Collector endpoint:** https://collector.alansdomain.xyz
-- **Repository:** *(add repo URL here)*
+- **Repository:** https://github.com/alzhao011/CSEHW5
 
 ## What this is
 
@@ -50,4 +50,4 @@ A single vanilla JS file (`collector.js`) loaded on every test site page. Tracks
 
 ## Use of AI
 
-Built with Claude. Useful for scaffolding the MVC structure and DB queries quickly, but required several rounds of fixing — a mysqli "commands out of sync" bug from calling `get_result()` inside a loop, negative performance values from reading `loadEventEnd` before it was stamped, and heatmap coordinate misalignment from rendering the iframe at a scaled-down CSS width instead of the original recording viewport size.
+Used Claude for scaffolding the initial MVC structure and database queries to speed up development. Wrote specific prompts to get targeted outcomes — things like the role/section middleware, CSRF implementation, and the collector event schema — rather than generating large blocks of code blindly. Still required several rounds of debugging and fixing: a mysqli "commands out of sync" bug from calling `get_result()` inside a loop, negative performance values from reading `loadEventEnd` before the browser had stamped it, and heatmap coordinate misalignment caused by rendering the iframe at a scaled-down CSS width instead of the original recording viewport size.
