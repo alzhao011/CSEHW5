@@ -8,6 +8,7 @@ $msgMap = [
     'deleted'           => ['success', 'User deleted.'],
     'invalid'           => ['danger',  'Invalid input.'],
     'cantdeleteyourself'=> ['danger',  "You can't delete your own account."],
+    'datareset'         => ['success', 'All event data has been cleared.'],
 ];
 $msgInfo = $msgMap[$message] ?? null;
 ?>
@@ -120,6 +121,19 @@ $msgInfo = $msgMap[$message] ?? null;
             </div>
             <?php endforeach; ?>
         </div>
+    </form>
+</div>
+
+<!-- Reset event data -->
+<div class="card p-3 mb-4 border-danger">
+    <h5 class="text-danger">Reset Event Data</h5>
+    <p class="text-muted" style="font-size:.9rem;">
+        This deletes all collected events from the database and clears the query cache.
+        Use this before handing off to a grader so the reports only show their activity and not your own testing data.
+    </p>
+    <form method="POST" action="/admin/reset-data" onsubmit="return confirm('This will delete all event data permanently. Are you sure?')">
+        <?= csrfField() ?>
+        <button type="submit" class="btn btn-danger">Clear all event data</button>
     </form>
 </div>
 

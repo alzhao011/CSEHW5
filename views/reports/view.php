@@ -1,6 +1,6 @@
 <?php
 $pageTitle = htmlspecialchars($report['title']);
-$extraHead = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>';
+$extraHead = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>';
 $role = $_SESSION['role'] ?? '';
 ob_start();
 ?>
@@ -13,7 +13,7 @@ ob_start();
         <small class="text-muted ms-2">by <?= htmlspecialchars($report['author']) ?> on <?= date('M j, Y', strtotime($report['created_at'])) ?></small>
     </div>
     <div>
-        <a href="/export/print?id=<?= $report['id'] ?>" class="btn btn-outline-secondary btn-sm" target="_blank">Print / Export PDF</a>
+        <a href="/export/print?id=<?= $report['id'] ?>" class="btn btn-outline-secondary btn-sm">Download PDF</a>
         <?php if (in_array($role, ['super_admin','analyst'])): ?>
         <form method="POST" action="/export/save" class="d-inline">
         <?= csrfField() ?>

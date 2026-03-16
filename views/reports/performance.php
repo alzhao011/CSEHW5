@@ -1,6 +1,6 @@
 <?php
 $pageTitle = 'Performance Report';
-$extraHead = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>';
+$extraHead = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>';
 ob_start();
 
 $avgLoad = $summary['avg_load'] ? round($summary['avg_load']) : 'N/A';
@@ -43,6 +43,19 @@ $avgDom  = $summary['avg_dom']  ? round($summary['avg_dom'])  : 'N/A';
 <div class="card p-3 mb-4">
     <h5>Avg Load Time by Page (ms)</h5>
     <div style="height:400px"><canvas id="loadChart"></canvas></div>
+    <noscript>
+        <table class="table table-bordered table-sm mt-2">
+            <thead class="table-dark"><tr><th>Page URL</th><th>Avg Load (ms)</th></tr></thead>
+            <tbody>
+                <?php foreach ($byPage as $p): ?>
+                <tr>
+                    <td><?= htmlspecialchars($p['page_url']) ?></td>
+                    <td><?= $p['avg_load'] !== null ? round($p['avg_load']) : 'N/A' ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </noscript>
 </div>
 
 <!-- Raw performance table -->

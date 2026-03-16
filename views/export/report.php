@@ -14,13 +14,7 @@
 <body class="p-4">
 
 <div class="no-print mb-3">
-    <button onclick="window.print()" class="btn btn-primary btn-sm">Print / Save as PDF</button>
-    <form method="POST" action="/export/save" class="d-inline">
-    <?= csrfField() ?>
-        <input type="hidden" name="id" value="<?= $report['id'] ?>">
-        <button class="btn btn-outline-dark btn-sm">Save Snapshot (accessible URL)</button>
-    </form>
-    <a href="/reports/view?id=<?= $report['id'] ?>" class="btn btn-outline-secondary btn-sm">Back</a>
+    <a href="/reports/view?id=<?= $report['id'] ?>" class="btn btn-outline-secondary btn-sm">Back to Report</a>
 </div>
 
 <h2><?= htmlspecialchars($report['title']) ?></h2>

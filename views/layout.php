@@ -20,6 +20,7 @@ $sections = $_SESSION['sections'] ?? null; // null = all for analyst
     <a class="navbar-brand" href="/dashboard">Analytics</a>
     <ul class="navbar-nav me-auto">
 
+
         <?php if ($role !== 'viewer'): ?>
         <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li>
 
@@ -47,10 +48,21 @@ $sections = $_SESSION['sections'] ?? null; // null = all for analyst
         <li class="nav-item"><a class="nav-link" href="/admin/users">User Management</a></li>
         <?php endif; ?>
     </ul>
-    <span class="navbar-text me-3 text-secondary small"><?= htmlspecialchars($_SESSION['username'] ?? '') ?> (<?= $role ?>)</span>
+    <?php
+    $roleLabel = $role;
+    if ($role === 'analyst') {
+        $secs = $sections ?? null;
+        if ($secs === null) {
+            $roleLabel = 'analyst:all';
+        } else {
+            $roleLabel = 'analyst:' . implode(', ', $secs);
+        }
+    }
+    ?>
+    <span class="navbar-text me-3 text-secondary small"><?= htmlspecialchars($_SESSION['username'] ?? '') ?> (<?= htmlspecialchars($roleLabel) ?>)</span>
     <a href="/logout" class="btn btn-outline-light btn-sm">Logout</a>
 </nav>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
 
 <div class="container mt-4">
     <?= $content ?? '' ?>

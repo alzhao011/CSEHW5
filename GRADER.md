@@ -16,39 +16,69 @@
 ## Walkthrough
 
 ### 1. Register a new account
-Go to https://reporting.alansdomain.xyz/register. Create an account — you'll be asked to pick 3 security questions and answer each one. Answers are not case-sensitive. New accounts get Viewer access by default.
+Go to https://reporting.alansdomain.xyz/register and create an account. You will be asked to pick 3 security questions and write an answer for each one. Answers are not case-sensitive. New accounts start with Viewer access by default.
 
 ### 2. Test account recovery
-Log out and click **Forgot password?** on the login page. Enter the username you just created. Your three security questions appear — answer them correctly to reach the password reset form. Try entering wrong answers first to see the error handling. The page renders even if the username doesn't exist (no enumeration).
+Log out and click "Forgot password?" on the login page. Enter the username you just created and your three security questions will show up. Try answering one wrong first to see the error. Then answer all three correctly and you will get to the password reset form. You have 10 minutes once verified. Also try entering a username that does not exist and you will notice the page still shows questions so you cannot tell which usernames are real.
 
 ### 3. Log in as Super Admin
-Use `superadmin` / `basicallyProfessor123`.
+Use superadmin / basicallyProfessor123.
 
-**Case-sensitivity:** Try logging in as `SuperAdmin` (capital S and A) — it fails. Usernames use a `BINARY` SQL comparison.
+**Case-sensitivity check:** Try logging in as SuperAdmin with a capital S and A. It will fail because usernames are case-sensitive at the database level.
 
-**Lockout:** Log out and enter the wrong password 5 times. The account locks and shows a countdown. Lockout is tracked by both username and IP.
+**Lockout check:** Log out and enter the wrong password 5 times in a row. The account will lock and show how many minutes are left. Lockout tracks both the username and the IP address so changing usernames does not help.
 
-**Session timeout:** Sessions expire after 30 minutes of inactivity and redirect to login with a notice.
+**Session timeout:** Sessions expire after 30 minutes of no activity. When it expires you get sent back to login with a message saying your session timed out.
 
-### 4. Traffic report
-Go to **Reports → Traffic**. You'll see summary cards, a sessions-over-time line chart, a page views bar chart, device breakdown and connection type pie charts, and a raw events table. Use the **date range filter** at the top — all charts and the table update to the selected window.
+### 4. Generate fresh data
+Before exploring the reports, go to https://test.alansdomain.xyz and browse around for a minute. Click things, visit a few pages, type something in the contact form. This generates the events that show up in the reports. Come back to the reporting app when done.
 
-### 5. Behavioral report
-Go to **Reports → Behavioral**. Scroll to the **Click Heatmap**. It shows a live iframe of the actual page rendered at its original viewport size, with a canvas heatmap overlay — red for hotspots, yellow for lighter activity. Use **Prev / Next** to cycle through tracked pages. The legend shows the max click count for the current page. Heatmap data is always live (not cached).
+To generate multiple sessions (so the Traffic report shows more than one), open the test site in a few different tabs. Each tab gets its own session ID using sessionStorage, so closing a tab and opening a new one counts as a new session. This is how the platform defines a session.
 
-### 6. Performance report
-Go to **Reports → Performance**. Summary cards show avg load time, avg TTFB (time to first byte), and avg DOM ready time. The bar chart and table break these down per page.
+### 5. Traffic report
+Go to Reports, then Traffic. You will see total pageviews and sessions at the top, a line chart of sessions over time, a bar chart of pageviews by page, and pie charts for device types and connection types. There is also a raw events table at the bottom. Try using the date range filter at the top and everything on the page will update to that window.
 
-### 7. Save a report and export it
-On any report page, scroll to the **Save this Report** form. Enter a title, write some analyst comments, check **Publish**, and save. Go to **Saved Reports**, find it, and click **View**. From the view page:
-- Click **Print / Export PDF** → clean print layout → use browser's Save as PDF
-- Click **Save Snapshot** → writes a static HTML file and gives you a public shareable URL
+### 6. Behavioral report
+Go to Reports, then Behavioral. Scroll down to the Click Heatmap section. The heatmap loads a live version of the page inside an iframe and draws a canvas overlay on top showing where people clicked. Red means a lot of clicks, yellow means fewer. Use the Prev and Next buttons to switch between tracked pages. The heatmap always shows the latest data and is not cached.
 
-### 8. Analyst role
-Log in as `analyst` / `basicallyTAs123`. This account is restricted to specific report sections. Try navigating directly to a restricted section — you'll get a 403. The analyst can view assigned reports, add comments, and save/publish reports, but cannot access user management.
+### 7. Performance report
+Go to Reports, then Performance. The summary cards at the top show average load time, average TTFB (time to first byte), and average DOM ready time across all samples. The bar chart and table below break those numbers down by page.
 
-### 9. Viewer role
-Log in as `viewer` / `basicallyStudent123`. Viewers land directly on Saved Reports. Try navigating to `/dashboard` or `/reports/traffic` directly — both return 403. Viewers can only see reports that have been published by an analyst.
+### 8. Save a report and try the export
+On any report page scroll down to the Save this Report section. Give it a title, write some comments, check Publish so viewers can see it, and save it. Then go to Saved Reports and click View on the one you just saved. From there you can click Download PDF to download a server-generated PDF file (built using FPDF, a PHP library). It includes the title, analyst comments, summary stats, and data tables. You can also click Save Snapshot to write a static HTML file with a shareable URL.
 
-### 10. User management
-Log back in as `superadmin` and go to **Admin → User Management**. Create a user, change a role, assign section access to an analyst, and delete a user. All forms are CSRF-protected — the token is verified server-side on every POST.
+### 9. Analyst role and section permissions
+Log out and log in as analyst / basicallyTAs123. You will see the analyst's sections listed in the navbar next to the username, for example (analyst:traffic, behavioral). Try navigating to a section the analyst does not have access to by typing the URL directly and you will get a 403.
+
+To change what sections an analyst can access, log back in as superadmin and go to User Management. Click Edit next to the analyst account. Choose the role "analyst" from the dropdown and check or uncheck whichever sections you want them to have. If you save with all checkboxes unchecked the analyst gets access to all sections, which shows up as (analyst:all) in the navbar.
+
+### 10. Viewer role
+Log out and log in as viewer / basicallyStudent123. Viewers go straight to Saved Reports after login. Try typing /dashboard or /reports/traffic into the URL bar and you will get a 403 both times. Viewers can only see reports that have been published.
+
+### 11. Reset data and verify
+Log in as superadmin and go to Admin, then User Management. Scroll to the bottom and click "Clear all event data". This wipes everything collected during development so the reports start fresh. Then go back to test.alansdomain.xyz, browse around, and come back to the reports to confirm only your own activity is showing up.
+
+### 12. User management
+Log back in as superadmin and go to Admin, then User Management. From here you can create a new user, change someone's role, limit an analyst to specific sections, or delete a user. Every form on this page is protected with a CSRF token.
+
+### 13. PDF export
+Go to Saved Reports and open any saved report. Click "Print / Export PDF". The server generates a PDF using FPDF (a PHP PDF library) and sends it as a download. It includes the report title, analyst comments, summary stats, and data tables. This is a server-generated file, not a browser print dialog.
+
+### 14. No-JS fallback
+Disable JavaScript in your browser (Chrome: DevTools, Settings, Debugger, Disable JavaScript) and reload any report page. The charts won't render but the data tables and summary cards are still there. The heatmap shows a text note explaining JavaScript is required for the interactive view.
+
+---
+
+## Known Limitations and Design Choices
+
+**PDF charts** - The PDF export includes data tables but not the charts. FPDF is a pure PHP library that generates PDFs from code rather than rendering HTML. Adding chart images to the PDF would require either a headless browser (not installed on this server) or a chart-to-image service. The data is still fully represented in table form.
+
+**Heatmap without JS** - The heatmap is entirely dependent on JavaScript canvas drawing. There is no meaningful static fallback for it other than pointing to the raw clicks table below it, which is what we do.
+
+**Single collector domain** - The collector is set up for test.alansdomain.xyz only. The Accept-Origin header on the collector API is locked to that domain. Adding more sites would require either making the origin configurable or deploying separate collector instances.
+
+**Pre-existing accounts have no security questions** - The superadmin and analyst accounts were created directly in the database before the security question system was built. If you try to use "Forgot password" on them you get a message saying to contact the website manager. Only accounts registered through the signup form have security questions set.
+
+**Session storage means tabs are sessions** - Each browser tab gets its own session ID from sessionStorage. This is intentional and matches how most analytics platforms count sessions, but it means power users with lots of open tabs will show inflated session counts compared to a cookie-based approach that persists across tabs.
+
+**No fallback if all three security questions are forgotten** - Account recovery depends entirely on the user remembering their three security question answers. If they forget all of them there is no secondary path like an email verification link or admin-assisted reset. A super admin can manually reset someone's password from the database, but there is no self-service option. The reason the platform has no email support is that setting up outbound SMTP requires a third-party service (SendGrid, Mailgun, etc.) which was out of scope. Adding email as a second recovery factor is listed in the roadmap.

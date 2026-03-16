@@ -22,7 +22,6 @@ class User {
         $stmt->bind_param("s", $username);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
-        $db->close();
         return $row ?: null;
     }
 
@@ -32,7 +31,6 @@ class User {
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
-        $db->close();
         return $row ?: null;
     }
 
@@ -51,7 +49,6 @@ class User {
         while ($row = $result->fetch_assoc()) {
             $rows[] = $row;
         }
-        $db->close();
         return $rows;
     }
 
@@ -62,7 +59,6 @@ class User {
         $stmt = $db->prepare("INSERT INTO users (username, password_hash, role, sections) VALUES (?, ?, ?, ?)");
         $stmt->bind_param("ssss", $username, $hash, $role, $sectionsJson);
         $ok = $stmt->execute();
-        $db->close();
         return $ok;
     }
 
@@ -93,7 +89,6 @@ class User {
             $q1, $ha1, $q2, $ha2, $q3, $ha3
         );
         $ok = $stmt->execute();
-        $db->close();
         return $ok;
     }
 
@@ -103,7 +98,6 @@ class User {
         $stmt = $db->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
         $stmt->bind_param("si", $hash, $userId);
         $ok = $stmt->execute();
-        $db->close();
         return $ok;
     }
 
@@ -121,7 +115,6 @@ class User {
         );
         $stmt2->bind_param("is", $userId, $token);
         $ok = $stmt2->execute();
-        $db->close();
         return $ok;
     }
 
@@ -135,7 +128,6 @@ class User {
         $stmt->bind_param("s", $token);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
-        $db->close();
         return $row ?: null;
     }
 
@@ -144,7 +136,6 @@ class User {
         $stmt = $db->prepare("UPDATE password_reset_tokens SET used = 1 WHERE id = ?");
         $stmt->bind_param("i", $tokenId);
         $stmt->execute();
-        $db->close();
     }
 
     public static function update(int $id, string $role, ?array $sections): bool {
@@ -153,7 +144,6 @@ class User {
         $stmt = $db->prepare("UPDATE users SET role = ?, sections = ? WHERE id = ?");
         $stmt->bind_param("ssi", $role, $sectionsJson, $id);
         $ok = $stmt->execute();
-        $db->close();
         return $ok;
     }
 
@@ -162,7 +152,6 @@ class User {
         $stmt = $db->prepare("DELETE FROM users WHERE id = ?");
         $stmt->bind_param("i", $id);
         $ok = $stmt->execute();
-        $db->close();
         return $ok;
     }
 }

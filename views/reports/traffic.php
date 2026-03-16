@@ -1,6 +1,6 @@
 <?php
 $pageTitle = 'Traffic Report';
-$extraHead = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>';
+$extraHead = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>';
 ob_start();
 ?>
 
@@ -34,18 +34,48 @@ ob_start();
 <div class="card p-3 mb-4">
     <h5>Sessions Over Time</h5>
     <div style="height:350px"><canvas id="sessionsChart"></canvas></div>
+    <noscript>
+        <table class="table table-bordered table-sm mt-2">
+            <thead class="table-dark"><tr><th>Date</th><th>Sessions</th></tr></thead>
+            <tbody>
+                <?php foreach ($dailySess as $d): ?>
+                <tr><td><?= htmlspecialchars($d['day']) ?></td><td><?= (int)$d['sessions'] ?></td></tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </noscript>
 </div>
 
 <!-- Page views bar chart -->
 <div class="card p-3 mb-4">
     <h5>Page Views by URL</h5>
     <div style="height:400px"><canvas id="pageViewsChart"></canvas></div>
+    <noscript>
+        <table class="table table-bordered table-sm mt-2">
+            <thead class="table-dark"><tr><th>Page URL</th><th>Views</th></tr></thead>
+            <tbody>
+                <?php foreach ($pageViews as $pv): ?>
+                <tr><td><?= htmlspecialchars($pv['page_url']) ?></td><td><?= number_format((int)$pv['views']) ?></td></tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </noscript>
 </div>
 
 <!-- Device breakdown -->
 <div class="card p-3 mb-4">
     <h5>Device Type Breakdown</h5>
     <div style="height:350px"><canvas id="deviceChart"></canvas></div>
+    <noscript>
+        <table class="table table-bordered table-sm mt-2">
+            <thead class="table-dark"><tr><th>Device</th><th>Sessions</th></tr></thead>
+            <tbody>
+                <tr><td>Mobile (&le;768px)</td><td><?= number_format((int)$devices['mobile']) ?></td></tr>
+                <tr><td>Tablet (769-1280px)</td><td><?= number_format((int)$devices['tablet']) ?></td></tr>
+                <tr><td>Desktop (&gt;1280px)</td><td><?= number_format((int)$devices['desktop']) ?></td></tr>
+            </tbody>
+        </table>
+    </noscript>
 </div>
 
 <!-- Raw page view table -->

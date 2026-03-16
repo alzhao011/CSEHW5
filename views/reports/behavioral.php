@@ -1,6 +1,6 @@
 <?php
 $pageTitle = 'Behavioral Report';
-$extraHead = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>';
+$extraHead = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>';
 ob_start();
 
 // build a lookup for counts
@@ -216,6 +216,9 @@ foreach ($counts as $c) $countMap[$c['event_type']] = (int)$c['cnt'];
         showPage(0);
     })();
     </script>
+    <noscript>
+        <p class="text-muted mt-2">JavaScript is required to display the interactive heatmap. Click data is available in the table below.</p>
+    </noscript>
     <?php endif; ?>
 </div>
 
@@ -223,18 +226,48 @@ foreach ($counts as $c) $countMap[$c['event_type']] = (int)$c['cnt'];
 <div class="card p-3 mb-4">
     <h5>Interaction Type Breakdown</h5>
     <div style="height:350px"><canvas id="typeChart"></canvas></div>
+    <noscript>
+        <table class="table table-bordered table-sm mt-2">
+            <thead class="table-dark"><tr><th>Event Type</th><th>Count</th></tr></thead>
+            <tbody>
+                <?php foreach ($counts as $c): ?>
+                <tr><td><?= htmlspecialchars($c['event_type']) ?></td><td><?= number_format((int)$c['cnt']) ?></td></tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </noscript>
 </div>
 
 <!-- Clicks by page -->
 <div class="card p-3 mb-4">
     <h5>Clicks by Page</h5>
     <div style="height:400px"><canvas id="clickChart"></canvas></div>
+    <noscript>
+        <table class="table table-bordered table-sm mt-2">
+            <thead class="table-dark"><tr><th>Page URL</th><th>Clicks</th></tr></thead>
+            <tbody>
+                <?php foreach ($clickPages as $cp): ?>
+                <tr><td><?= htmlspecialchars($cp['page_url']) ?></td><td><?= number_format((int)$cp['clicks']) ?></td></tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </noscript>
 </div>
 
 <!-- Behavioral events over time -->
 <div class="card p-3 mb-4">
     <h5>Interactions Over Time</h5>
     <div style="height:350px"><canvas id="timeChart"></canvas></div>
+    <noscript>
+        <table class="table table-bordered table-sm mt-2">
+            <thead class="table-dark"><tr><th>Date</th><th>Interactions</th></tr></thead>
+            <tbody>
+                <?php foreach ($byDay as $d): ?>
+                <tr><td><?= htmlspecialchars($d['day']) ?></td><td><?= number_format((int)$d['cnt']) ?></td></tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </noscript>
 </div>
 
 <!-- Top keys table -->

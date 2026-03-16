@@ -55,4 +55,17 @@ class UserController {
         header("Location: /admin/users?msg=deleted");
         exit;
     }
+
+    public function resetData(): void {
+        requireRole('super_admin');
+        verifyCsrf();
+        $db = getDB();
+        $db->query("DELETE FROM events");
+        // Clear the query cache so reports don't show stale aggregations
+        foreach (glob(__DIR__ . '/../cache/*.cache') as $file) {
+            unlink($file);
+        }
+        header("Location: /admin/users?msg=datareset");
+        exit;
+    }
 }

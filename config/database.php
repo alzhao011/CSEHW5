@@ -1,7 +1,9 @@
 <?php
 
 function getDB(): mysqli {
+    static $db  = null;
     static $env = null;
+    if ($db !== null) return $db;
     if ($env === null) {
         $env = parse_ini_file(__DIR__ . '/../.env') ?: [];
     }

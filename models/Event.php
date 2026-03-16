@@ -25,14 +25,12 @@ class Event {
         $rows = [];
         $result = $stmt->get_result();
         while ($row = $result->fetch_assoc()) $rows[] = $row;
-        $db->close();
         return $rows;
     }
 
     public static function getCount(): int {
         $db = getDB();
         $row = $db->query("SELECT COUNT(*) as cnt FROM events")->fetch_assoc();
-        $db->close();
         return (int) $row['cnt'];
     }
 
@@ -41,7 +39,6 @@ class Event {
         $result = $db->query("SELECT event_type, COUNT(*) as cnt FROM events GROUP BY event_type ORDER BY cnt DESC");
         $rows = [];
         while ($row = $result->fetch_assoc()) $rows[] = $row;
-        $db->close();
         return $rows;
     }
 
@@ -50,7 +47,6 @@ class Event {
         $result = $db->query("SELECT DATE(created_at) as day, COUNT(*) as cnt FROM events GROUP BY DATE(created_at) ORDER BY day");
         $rows = [];
         while ($row = $result->fetch_assoc()) $rows[] = $row;
-        $db->close();
         return $rows;
     }
 
@@ -61,7 +57,6 @@ class Event {
         $stmt->execute();
         $rows = [];
         $result = $stmt->get_result(); while ($row = $result->fetch_assoc()) $rows[] = $row;
-        $db->close();
         return $rows;
     }
 
@@ -74,7 +69,6 @@ class Event {
         $stmt->execute();
         $rows = [];
         $result = $stmt->get_result(); while ($row = $result->fetch_assoc()) $rows[] = $row;
-        $db->close();
         return $rows;
     }
 
@@ -86,7 +80,6 @@ class Event {
         $stmt->execute();
         $rows = [];
         $result = $stmt->get_result(); while ($row = $result->fetch_assoc()) $rows[] = $row;
-        $db->close();
         return $rows;
     }
 
@@ -101,7 +94,6 @@ class Event {
         if ($dr['types']) $stmt->bind_param($dr['types'], ...$dr['params']);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
-        $db->close();
         return $row ?: ['mobile'=>0,'tablet'=>0,'desktop'=>0];
     }
 
@@ -113,7 +105,6 @@ class Event {
         $stmt->execute();
         $rows = [];
         $result = $stmt->get_result(); while ($row = $result->fetch_assoc()) $rows[] = $row;
-        $db->close();
         return $rows;
     }
 
@@ -124,7 +115,6 @@ class Event {
         if ($dr['types']) $stmt->bind_param($dr['types'], ...$dr['params']);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
-        $db->close();
         return $row ?: ['pageviews'=>0,'sessions'=>0];
     }
 
@@ -137,7 +127,6 @@ class Event {
         $stmt->execute();
         $rows = [];
         $result = $stmt->get_result(); while ($row = $result->fetch_assoc()) $rows[] = $row;
-        $db->close();
         return $rows;
     }
 
@@ -149,7 +138,6 @@ class Event {
         $stmt->execute();
         $rows = [];
         $result = $stmt->get_result(); while ($row = $result->fetch_assoc()) $rows[] = $row;
-        $db->close();
         return $rows;
     }
 
@@ -163,7 +151,6 @@ class Event {
         $stmt->execute();
         $rows = [];
         $result = $stmt->get_result(); while ($row = $result->fetch_assoc()) $rows[] = $row;
-        $db->close();
         return $rows;
     }
 
@@ -175,7 +162,6 @@ class Event {
         $stmt->execute();
         $rows = [];
         $result = $stmt->get_result(); while ($row = $result->fetch_assoc()) $rows[] = $row;
-        $db->close();
         return $rows;
     }
 
@@ -186,7 +172,6 @@ class Event {
         $stmt->execute();
         $rows = [];
         $result = $stmt->get_result(); while ($row = $result->fetch_assoc()) $rows[] = $row;
-        $db->close();
         return $rows;
     }
 
@@ -198,7 +183,6 @@ class Event {
         $stmt->execute();
         $rows = [];
         $result = $stmt->get_result(); while ($row = $result->fetch_assoc()) $rows[] = $row;
-        $db->close();
         return $rows;
     }
 
@@ -210,7 +194,6 @@ class Event {
         $stmt->execute();
         $rows = [];
         $result = $stmt->get_result(); while ($row = $result->fetch_assoc()) $rows[] = $row;
-        $db->close();
         return $rows;
     }
 
@@ -231,7 +214,6 @@ class Event {
         $stmt->execute();
         $rows = [];
         $result = $stmt->get_result(); while ($row = $result->fetch_assoc()) $rows[] = $row;
-        $db->close();
         return $rows;
     }
 
@@ -242,7 +224,6 @@ class Event {
         $stmt->execute();
         $rows = [];
         $result = $stmt->get_result(); while ($row = $result->fetch_assoc()) $rows[] = $row;
-        $db->close();
         return $rows;
     }
 
@@ -257,7 +238,6 @@ class Event {
         if ($dr['types']) $stmt->bind_param($dr['types'], ...$dr['params']);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
-        $db->close();
         return $row ?: ['samples'=>0,'avg_load'=>0,'avg_ttfb'=>0,'avg_dom'=>0];
     }
 }
