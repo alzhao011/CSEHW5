@@ -46,9 +46,9 @@ When registering, users pick 3 security questions and write answers for each. Th
 
 ## Collector
 
-A single vanilla JS file loaded on every test site page. It tracks page loads, clicks (including the viewport size so the heatmap can normalize coordinates across different screen sizes), mousemoves throttled to once per second, keydowns, and page unloads. Performance timing is read inside a setTimeout so the browser has finished stamping loadEventEnd before we read it. Events are sent with navigator.sendBeacon so they don't block navigation.
+A single vanilla JS file loaded on every test site page. It tracks page loads, clicks (including the viewport size so the heatmap can normalize coordinates across different screen sizes), mousemoves throttled to once per second, form submissions (capturing the form action URL and method), and page unloads. Performance timing is read inside a setTimeout so the browser has finished stamping loadEventEnd before we read it. Events are sent with navigator.sendBeacon so they don't block navigation.
 
-Sessions are scoped to browser tabs using sessionStorage. Each new tab gets its own session ID and closing the tab ends that session. This means opening the test site in two tabs counts as two sessions, and coming back to the same tab after navigating around still counts as the same session. This matches how most analytics tools define a session and avoids the problem of localStorage where the same ID persists forever across all visits.
+Sessions use a 30-minute inactivity timeout, stored in localStorage. Each visit generates a session ID that persists until the user is inactive for 30 minutes, at which point the next event triggers a new session ID. This matches how Google Analytics and most other platforms define a session.
 
 ## Resetting event data
 
@@ -56,7 +56,7 @@ There is a "Clear all event data" button at the bottom of the User Management pa
 
 ## Export
 
-Reports can be exported as PDF using FPDF, a pure PHP PDF library with no external dependencies. The PDF includes the report title, analyst comments, summary statistics, and data tables for each report category. Charts are not included in the PDF since FPDF does not support rendering HTML canvas elements, but all the underlying numbers are present in table form.
+Reports can be exported as PDF using FPDF, a pure PHP PDF library with no external dependencies. When the user clicks Download PDF on a saved report, JavaScript captures the Chart.js canvas as a PNG (composited onto a white background to avoid transparency issues), submits it as a base64 data URI alongside the report ID, and the server decodes it, writes it to a temp file, embeds it in the PDF via FPDF's Image() method, then deletes the temp file. The PDF includes the report title, analyst comments, summary statistics, a chart image, and data tables.
 
 The "Save Snapshot" button generates a static HTML file and saves it to the /exports directory with a shareable URL. The snapshot is a point-in-time copy of the report as it looked when the button was clicked.
 

@@ -292,7 +292,6 @@ class AuthController {
         $stmt->bind_param("s", $username);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
-        $db->close();
         if (!$row || !$row['locked_until']) return null;
         $until = strtotime($row['locked_until']);
         return $until > time() ? $until : null;
@@ -304,7 +303,6 @@ class AuthController {
         $stmt->bind_param("s", $ip);
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
-        $db->close();
         if (!$row || !$row['locked_until']) return null;
         $until = strtotime($row['locked_until']);
         return $until > time() ? $until : null;
@@ -345,7 +343,6 @@ class AuthController {
             $stmt6->execute();
         }
 
-        $db->close();
         return $attempts;
     }
 
@@ -357,6 +354,5 @@ class AuthController {
         $stmt2 = $db->prepare("DELETE FROM ip_lockouts WHERE ip = ?");
         $stmt2->bind_param("s", $ip);
         $stmt2->execute();
-        $db->close();
     }
 }

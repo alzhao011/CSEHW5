@@ -122,7 +122,7 @@ class Event {
     public static function getBehavioralCounts(?string $start = null, ?string $end = null): array {
         $dr = self::dateRange($start, $end);
         $db = getDB();
-        $stmt = $db->prepare("SELECT event_type, COUNT(*) as cnt FROM events WHERE event_type IN ('click','mousemove','keydown')" . $dr['clause'] . " GROUP BY event_type");
+        $stmt = $db->prepare("SELECT event_type, COUNT(*) as cnt FROM events WHERE event_type IN ('click','mousemove','submit')" . $dr['clause'] . " GROUP BY event_type");
         if ($dr['types']) $stmt->bind_param($dr['types'], ...$dr['params']);
         $stmt->execute();
         $rows = [];
@@ -141,13 +141,11 @@ class Event {
         return $rows;
     }
 
-    public static function getTopKeys(int $limit = 15, ?string $start = null, ?string $end = null): array {
+    public static function getFormSubmissionsByPage(?string $start = null, ?string $end = null): array {
         $dr = self::dateRange($start, $end);
         $db = getDB();
-        $types = 'i' . $dr['types'];
-        $params = array_merge([$limit], $dr['params']);
-        $stmt = $db->prepare("SELECT JSON_UNQUOTE(JSON_EXTRACT(data,'$.key')) as key_pressed, COUNT(*) as cnt FROM events WHERE event_type='keydown'" . $dr['clause'] . " GROUP BY key_pressed ORDER BY cnt DESC LIMIT ?");
-        $stmt->bind_param($types, ...$params);
+        $stmt = $db->prepare("SELECT page_url, JSON_UNQUOTE(JSON_EXTRACT(data,'$.action')) as form_action, COUNT(*) as cnt FROM events WHERE event_type='submit'" . $dr['clause'] . " GROUP BY page_url, form_action ORDER BY cnt DESC LIMIT 20");
+        if ($dr['types']) $stmt->bind_param($dr['types'], ...$dr['params']);
         $stmt->execute();
         $rows = [];
         $result = $stmt->get_result(); while ($row = $result->fetch_assoc()) $rows[] = $row;
@@ -157,7 +155,7 @@ class Event {
     public static function getBehavioralByDay(?string $start = null, ?string $end = null): array {
         $dr = self::dateRange($start, $end);
         $db = getDB();
-        $stmt = $db->prepare("SELECT DATE(created_at) as day, COUNT(*) as cnt FROM events WHERE event_type IN ('click','mousemove','keydown')" . $dr['clause'] . " GROUP BY DATE(created_at) ORDER BY day");
+        $stmt = $db->prepare("SELECT DATE(created_at) as day, COUNT(*) as cnt FROM events WHERE event_type IN ('click','mousemove','submit')" . $dr['clause'] . " GROUP BY DATE(created_at) ORDER BY day");
         if ($dr['types']) $stmt->bind_param($dr['types'], ...$dr['params']);
         $stmt->execute();
         $rows = [];
@@ -167,7 +165,7 @@ class Event {
 
     public static function getBehavioralRaw(int $limit = 50, int $offset = 0): array {
         $db = getDB();
-        $stmt = $db->prepare("SELECT * FROM events WHERE event_type IN ('click','mousemove','keydown') ORDER BY created_at DESC LIMIT ? OFFSET ?");
+        $stmt = $db->prepare("SELECT * FROM events WHERE event_type IN ('click','mousemove','submit') ORDER BY created_at DESC LIMIT ? OFFSET ?");
         $stmt->bind_param("ii", $limit, $offset);
         $stmt->execute();
         $rows = [];
@@ -178,7 +176,7 @@ class Event {
     public static function getClickCoordinates(?string $start = null, ?string $end = null): array {
         $dr = self::dateRange($start, $end);
         $db = getDB();
-        $stmt = $db->prepare("SELECT page_url, JSON_EXTRACT(data,'$.x') as x, JSON_EXTRACT(data,'$.y') as y, JSON_EXTRACT(data,'$.vw') as vw, JSON_EXTRACT(data,'$.vh') as vh FROM events WHERE event_type='click'" . $dr['clause'] . " LIMIT 500");
+        $stmt = $db->prepare("SELECT page_url, JSON_EXTRACT(data,'$.x') as x, JSON_EXTRACT(data,'$.y') as y, JSON_EXTRACT(data,'$.vw') as vw, JSON_EXTRACT(data,'$.vh') as vh FROM events WHERE event_type='click'" . $dr['clause'] . " ORDER BY created_at DESC LIMIT 500");
         if ($dr['types']) $stmt->bind_param($dr['types'], ...$dr['params']);
         $stmt->execute();
         $rows = [];
@@ -239,5 +237,38 @@ class Event {
         $stmt->execute();
         $row = $stmt->get_result()->fetch_assoc();
         return $row ?: ['samples'=>0,'avg_load'=>0,'avg_ttfb'=>0,'avg_dom'=>0];
+    }
+
+    public static function getActivityHeatmap(?string $start = null, ?string $end = null): array {
+        $dr = self::dateRange($start, $end);
+        $db = getDB();
+        $stmt = $db->prepare(
+            "SELECT DAYOFWEEK(created_at) as dow, HOUR(created_at) as hr, COUNT(*) as cnt
+             FROM events WHERE event_type='static'" . $dr['clause'] . " GROUP BY dow, hr"
+        );
+        if ($dr['types']) $stmt->bind_param($dr['types'], ...$dr['params']);
+        $stmt->execute();
+        $rows = [];
+        $result = $stmt->get_result();
+        while ($row = $result->fetch_assoc()) $rows[] = $row;
+        return $rows;
+    }
+
+    public static function getSessionStats(?string $start = null, ?string $end = null): array {
+        $dr = self::dateRange($start, $end);
+        $db = getDB();
+        $stmt = $db->prepare(
+            "SELECT COUNT(DISTINCT session_id) as total_sessions,
+                    ROUND(AVG(pages), 1) as avg_pages,
+                    SUM(CASE WHEN pages = 1 THEN 1 ELSE 0 END) as bounced
+             FROM (
+                 SELECT session_id, COUNT(*) as pages
+                 FROM events WHERE event_type='static'" . $dr['clause'] . " GROUP BY session_id
+             ) s"
+        );
+        if ($dr['types']) $stmt->bind_param($dr['types'], ...$dr['params']);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_assoc();
+        return $row ?: ['total_sessions' => 0, 'avg_pages' => 0, 'bounced' => 0];
     }
 }

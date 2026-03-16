@@ -61,7 +61,7 @@ new Chart(document.getElementById('expSessChart'),{type:'line',data:{labels:<?= 
 <div class="row mb-4">
     <div class="col-4"><div class="card text-center p-2"><h5><?= number_format($countMap['click']??0) ?></h5><small>Clicks</small></div></div>
     <div class="col-4"><div class="card text-center p-2"><h5><?= number_format($countMap['mousemove']??0) ?></h5><small>Mouse Moves</small></div></div>
-    <div class="col-4"><div class="card text-center p-2"><h5><?= number_format($countMap['keydown']??0) ?></h5><small>Keystrokes</small></div></div>
+    <div class="col-4"><div class="card text-center p-2"><h5><?= number_format($countMap['submit']??0) ?></h5><small>Form Submissions</small></div></div>
 </div>
 <h5>Interaction Breakdown</h5>
 <div style="height:300px"><canvas id="expBChart"></canvas></div>
@@ -71,8 +71,15 @@ new Chart(document.getElementById('expSessChart'),{type:'line',data:{labels:<?= 
     <thead class="table-dark"><tr><th>Page</th><th>Clicks</th></tr></thead>
     <tbody><?php foreach ($clickPages as $cp): ?><tr><td class="truncate"><?= htmlspecialchars($cp['page_url']) ?></td><td><?= $cp['clicks'] ?></td></tr><?php endforeach; ?></tbody>
 </table>
+<h5>Form Submissions by Page</h5>
+<table class="table table-bordered table-sm">
+    <thead class="table-dark"><tr><th>Page</th><th>Form Action</th><th>Count</th></tr></thead>
+    <tbody><?php foreach ($formSubmissions as $f): ?><tr><td class="truncate"><?= htmlspecialchars($f['page_url']) ?></td><td class="truncate"><?= htmlspecialchars($f['form_action']??'(unknown)') ?></td><td><?= (int)$f['cnt'] ?></td></tr><?php endforeach; ?></tbody>
+</table>
 <script>
-new Chart(document.getElementById('expBChart'),{type:'pie',data:{labels:<?= json_encode(array_column($counts,'event_type')) ?>,datasets:[{data:<?= json_encode(array_map('intval',array_column($counts,'cnt'))) ?>,backgroundColor:['#ff6384','#36a2eb','#ffce56']}]},options:{responsive:true,maintainAspectRatio:false}});
+var expBTypeMap={'click':'#ff6384','mousemove':'#36a2eb','submit':'#4bc0c0'};
+var expBLabels=<?= json_encode(array_column($counts,'event_type')) ?>;
+new Chart(document.getElementById('expBChart'),{type:'pie',data:{labels:expBLabels,datasets:[{data:<?= json_encode(array_map('intval',array_column($counts,'cnt'))) ?>,backgroundColor:expBLabels.map(function(t){return expBTypeMap[t]||'#aaa';})}]},options:{responsive:true,maintainAspectRatio:false}});
 </script>
 
 <?php elseif ($report['category'] === 'performance'): ?>

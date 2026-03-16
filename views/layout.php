@@ -67,5 +67,27 @@ $sections = $_SESSION['sections'] ?? null; // null = all for analyst
 <div class="container mt-4">
     <?= $content ?? '' ?>
 </div>
+<script>
+(function () {
+    function countUp(el) {
+        var raw = el.getAttribute('data-count');
+        if (!raw) return;
+        var target = parseInt(raw.replace(/,/g, ''), 10);
+        if (isNaN(target) || target < 2) return;
+        var start = null, dur = 900;
+        function step(ts) {
+            if (!start) start = ts;
+            var p = Math.min((ts - start) / dur, 1);
+            var eased = 1 - Math.pow(1 - p, 3);
+            el.textContent = Math.floor(eased * target).toLocaleString();
+            if (p < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-count]').forEach(countUp);
+    });
+})();
+</script>
 </body>
 </html>

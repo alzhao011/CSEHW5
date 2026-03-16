@@ -1,40 +1,64 @@
 <?php
 $pageTitle = 'Performance Report';
-$extraHead = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>';
+$extraHead = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>';
 ob_start();
 
-$avgLoad = $summary['avg_load'] ? round($summary['avg_load']) : 'N/A';
-$avgTtfb = $summary['avg_ttfb'] ? round($summary['avg_ttfb']) : 'N/A';
-$avgDom  = $summary['avg_dom']  ? round($summary['avg_dom'])  : 'N/A';
+$avgLoad = isset($summary['avg_load']) && $summary['avg_load'] ? round($summary['avg_load']) : 0;
+$avgTtfb = isset($summary['avg_ttfb']) && $summary['avg_ttfb'] ? round($summary['avg_ttfb']) : 0;
+$avgDom  = isset($summary['avg_dom'])  && $summary['avg_dom']  ? round($summary['avg_dom'])  : 0;
+$avgLoadDisplay = $avgLoad ? number_format($avgLoad).'ms' : 'N/A';
+$gaugeColor = $avgLoad === 0 ? '#6c757d' : ($avgLoad < 1000 ? '#20c997' : ($avgLoad < 3000 ? '#ffc107' : '#dc3545'));
+$avgTtfbDisplay = $avgTtfb ? number_format($avgTtfb).'ms' : 'N/A';
+$avgDomDisplay  = $avgDom  ? number_format($avgDom).'ms'  : 'N/A';
 ?>
 
 <h3>Performance Report</h3>
 <br>
 <?php require __DIR__ . '/_date_filter.php'; ?>
 
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card text-center p-3">
-            <h4><?= number_format((int)$summary['samples']) ?></h4>
-            <small class="text-muted">Samples Collected</small>
+<!-- Gauge + summary row -->
+<div class="row mb-4 align-items-stretch">
+    <div class="col-md-4">
+        <div class="card p-3 h-100 text-center">
+            <h6 class="text-muted mb-2">Load Time Score</h6>
+            <div style="height:110px; position:relative"><canvas id="gaugeChart"></canvas></div>
+            <div style="margin-top:6px; line-height:1.3">
+                <strong style="font-size:1.6rem; color:<?= $gaugeColor ?>"><?= $avgLoadDisplay ?></strong><br>
+                <small class="text-muted">Avg Load Time</small>
+            </div>
+            <div class="d-flex justify-content-between px-2 mt-3" style="font-size:0.72rem">
+                <span style="color:#20c997">Fast &lt;1s</span>
+                <span style="color:#ffc107">OK 1-3s</span>
+                <span style="color:#dc3545">Slow &gt;3s</span>
+            </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-center p-3">
-            <h4><?= $avgLoad !== 'N/A' ? number_format($avgLoad).'ms' : 'N/A' ?></h4>
-            <small class="text-muted">Avg Load Time</small>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-center p-3">
-            <h4><?= $avgTtfb !== 'N/A' ? number_format($avgTtfb).'ms' : 'N/A' ?></h4>
-            <small class="text-muted">Avg TTFB</small>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card text-center p-3">
-            <h4><?= $avgDom !== 'N/A' ? number_format($avgDom).'ms' : 'N/A' ?></h4>
-            <small class="text-muted">Avg DOM Ready</small>
+    <div class="col-md-8">
+        <div class="row g-3 h-100">
+            <div class="col-6">
+                <div class="card text-center p-3 h-100">
+                    <h4 data-count="<?= (int)$summary['samples'] ?>"><?= number_format((int)$summary['samples']) ?></h4>
+                    <small class="text-muted">Samples Collected</small>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card text-center p-3 h-100">
+                    <h4><?= $avgLoadDisplay ?></h4>
+                    <small class="text-muted">Avg Load Time</small>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card text-center p-3 h-100">
+                    <h4><?= $avgTtfbDisplay ?></h4>
+                    <small class="text-muted">Avg TTFB</small>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card text-center p-3 h-100">
+                    <h4><?= $avgDomDisplay ?></h4>
+                    <small class="text-muted">Avg DOM Ready</small>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -106,6 +130,37 @@ $avgDom  = $summary['avg_dom']  ? round($summary['avg_dom'])  : 'N/A';
 <?php endif; ?>
 
 <script>
+// Performance gauge
+(function () {
+    var avgMs = <?= $avgLoad ?>;
+    var maxScale = 5000;
+    var filled  = avgMs > 0 ? Math.min(avgMs / maxScale, 1) : 0;
+    var color   = avgMs === 0 ? '#6c757d' : avgMs < 1000 ? '#20c997' : avgMs < 3000 ? '#ffc107' : '#dc3545';
+    var labelTx = avgMs === 0 ? 'N/A' : avgMs.toLocaleString() + 'ms';
+
+    new Chart(document.getElementById('gaugeChart'), {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [filled, 1 - filled],
+                backgroundColor: [color, '#e9ecef'],
+                borderWidth: 0,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            circumference: 180,
+            rotation: -90,
+            cutout: '70%',
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { animateRotate: true, duration: 1200 },
+            plugins: { legend: { display: false }, tooltip: { enabled: false } }
+        }
+    });
+})();
+
+// Load time bar chart
 var loadLabels = <?= json_encode(array_map(function($p) {
     $u = $p['page_url']; return strlen($u)>40?'...'.substr($u,-37):$u;
 }, $byPage)) ?>;
@@ -117,9 +172,15 @@ new Chart(document.getElementById('loadChart'), {
     type: 'bar',
     data: {
         labels: loadLabels,
-        datasets: [{ label: 'Avg Load Time (ms)', data: loadData, backgroundColor: '#20c997' }]
+        datasets: [{ label: 'Avg Load Time (ms)', data: loadData, backgroundColor: loadData.map(function(v) {
+            return v < 1000 ? '#20c997' : v < 3000 ? '#ffc107' : '#dc3545';
+        }), borderRadius: 4 }]
     },
-    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+    }
 });
 </script>
 

@@ -1,6 +1,6 @@
 <?php
 $pageTitle = 'Behavioral Report';
-$extraHead = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>';
+$extraHead = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>';
 ob_start();
 
 // build a lookup for counts
@@ -16,27 +16,32 @@ foreach ($counts as $c) $countMap[$c['event_type']] = (int)$c['cnt'];
 <div class="row mb-4">
     <div class="col-md-3">
         <div class="card text-center p-3">
-            <h4><?= number_format($countMap['click'] ?? 0) ?></h4>
+            <h4 data-count="<?= (int)($countMap['click'] ?? 0) ?>"><?= number_format($countMap['click'] ?? 0) ?></h4>
             <small class="text-muted">Clicks</small>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card text-center p-3">
-            <h4><?= number_format($countMap['mousemove'] ?? 0) ?></h4>
+            <h4 data-count="<?= (int)($countMap['mousemove'] ?? 0) ?>"><?= number_format($countMap['mousemove'] ?? 0) ?></h4>
             <small class="text-muted">Mouse Moves</small>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card text-center p-3">
-            <h4><?= number_format($countMap['keydown'] ?? 0) ?></h4>
-            <small class="text-muted">Keystrokes</small>
+            <h4 data-count="<?= (int)($countMap['submit'] ?? 0) ?>"><?= number_format($countMap['submit'] ?? 0) ?></h4>
+            <small class="text-muted">Form Submissions</small>
         </div>
     </div>
 </div>
 
 <!-- Click Heatmap -->
 <div class="card p-3 mb-4">
-    <h5>Click Heatmap <small class="text-muted">(overlay on live page, up to 500 clicks)</small></h5>
+    <h5>Click Heatmap</h5>
+    <p class="text-muted small mb-2">
+        Shows where users clicked on <a href="https://test.alansdomain.xyz" target="_blank">test.alansdomain.xyz</a>.
+        To add clicks, open that site in a separate tab and click around, then refresh this page.
+        The preview below is read-only — clicking on it does not record data.
+    </p>
 
     <?php if (empty($clicks)): ?>
         <p class="text-muted">No click data available for this date range.</p>
@@ -100,6 +105,13 @@ foreach ($counts as $c) $countMap[$c['event_type']] = (int)$c['cnt'];
     <div id="heatmapWrapper" style="position:relative; width:100%; overflow:hidden; border:1px solid #dee2e6; background:#f8f9fa;">
         <iframe id="heatmapFrame" style="position:absolute; top:0; left:0; border:none; pointer-events:none; transform-origin:top left;" scrolling="no"></iframe>
         <canvas id="heatmapCanvas" style="position:absolute; top:0; left:0; transform-origin:top left;"></canvas>
+        <!-- Lazy-load overlay: removed once user explicitly loads the preview -->
+        <div id="heatmapOverlay" style="position:absolute; top:0; left:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:rgba(248,249,250,0.97); z-index:10;">
+            <div class="text-center">
+                <p class="text-muted mb-3">Page preview is not loaded to avoid tracking phantom events and browser lag.</p>
+                <button id="loadPreviewBtn" class="btn btn-outline-primary">Load Page Preview</button>
+            </div>
+        </div>
     </div>
 
     <!-- Legend -->
@@ -180,6 +192,8 @@ foreach ($counts as $c) $countMap[$c['event_type']] = (int)$c['cnt'];
             });
         }
 
+        var previewLoaded = false;
+
         function showPage(index) {
             var url    = pages[index];
             var points = allData[url] || [];
@@ -192,10 +206,20 @@ foreach ($counts as $c) $countMap[$c['event_type']] = (int)$c['cnt'];
                                 + '  ·  ' + points.length + ' clicks'
                                 + '  ·  ' + sess + ' session' + (sess !== 1 ? 's' : '')
                                 + '  ·  ' + cps + ' clicks/session';
-            frame.src = /^https?:\/\//i.test(url) ? url : 'about:blank';
+            if (previewLoaded) {
+                frame.src = /^https?:\/\//i.test(url) ? url : 'about:blank';
+            }
             scaleToFit(dims.w, dims.h);
             drawHeatmap(points, dims.w, dims.h);
         }
+
+        document.getElementById('loadPreviewBtn').addEventListener('click', function() {
+            previewLoaded = true;
+            var overlay = document.getElementById('heatmapOverlay');
+            if (overlay) overlay.remove();
+            var url = pages[current];
+            frame.src = /^https?:\/\//i.test(url) ? url : 'about:blank';
+        });
 
         document.getElementById('prevPage').addEventListener('click', function() {
             current = (current - 1 + pages.length) % pages.length;
@@ -213,7 +237,7 @@ foreach ($counts as $c) $countMap[$c['event_type']] = (int)$c['cnt'];
             drawHeatmap(allData[url] || [], dims.w, dims.h);
         });
 
-        showPage(0);
+        showPage(0); // renders label + heatmap dots; iframe stays blank until user clicks Load
     })();
     </script>
     <noscript>
@@ -270,17 +294,27 @@ foreach ($counts as $c) $countMap[$c['event_type']] = (int)$c['cnt'];
     </noscript>
 </div>
 
-<!-- Top keys table -->
+<!-- Form submissions by page -->
 <div class="card p-3 mb-4">
-    <h5>Top Keys Pressed</h5>
-    <table class="table table-bordered table-striped table-sm">
-        <thead class="table-dark"><tr><th>Key</th><th>Count</th></tr></thead>
-        <tbody>
-            <?php foreach ($topKeys as $k): ?>
-            <tr><td><?= htmlspecialchars($k['key_pressed'] ?? '(unknown)') ?></td><td><?= number_format($k['cnt']) ?></td></tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
+    <h5>Form Submissions by Page</h5>
+    <div style="height:350px"><canvas id="formChart"></canvas></div>
+    <noscript>
+        <table class="table table-bordered table-sm mt-2">
+            <thead class="table-dark"><tr><th>Page</th><th>Form Action</th><th>Submissions</th></tr></thead>
+            <tbody>
+                <?php foreach ($formSubmissions as $f): ?>
+                <tr>
+                    <td class="truncate"><?= htmlspecialchars($f['page_url']) ?></td>
+                    <td class="truncate"><?= htmlspecialchars($f['form_action'] ?? '(unknown)') ?></td>
+                    <td><?= number_format((int)$f['cnt']) ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </noscript>
+    <?php if (empty($formSubmissions)): ?>
+    <p class="text-muted mt-2 mb-0">No form submissions recorded yet.</p>
+    <?php endif; ?>
 </div>
 
 <!-- Raw behavioral events -->
@@ -329,11 +363,13 @@ foreach ($counts as $c) $countMap[$c['event_type']] = (int)$c['cnt'];
 <?php endif; ?>
 
 <script>
+var typeColorMap = { click: '#ff6384', mousemove: '#36a2eb', submit: '#4bc0c0' };
+var typeLabels = <?= json_encode(array_column($counts, 'event_type')) ?>;
 new Chart(document.getElementById('typeChart'), {
     type: 'pie',
     data: {
-        labels: <?= json_encode(array_column($counts, 'event_type')) ?>,
-        datasets: [{ data: <?= json_encode(array_map('intval', array_column($counts,'cnt'))) ?>, backgroundColor: ['#ff6384','#36a2eb','#ffce56'] }]
+        labels: typeLabels,
+        datasets: [{ data: <?= json_encode(array_map('intval', array_column($counts,'cnt'))) ?>, backgroundColor: typeLabels.map(function(t){ return typeColorMap[t] || '#aaa'; }) }]
     },
     options: { responsive: true, maintainAspectRatio: false }
 });
@@ -345,10 +381,24 @@ new Chart(document.getElementById('clickChart'), {
     type: 'bar',
     data: {
         labels: cpLabels,
-        datasets: [{ label: 'Clicks', data: <?= json_encode(array_map('intval', array_column($clickPages,'clicks'))) ?>, backgroundColor: '#ff6384' }]
+        datasets: [{ label: 'Clicks', data: <?= json_encode(array_map('intval', array_column($clickPages,'clicks'))) ?>, backgroundColor: '#ff6384', borderRadius: 4 }]
     },
     options: { responsive: true, maintainAspectRatio: false }
 });
+
+var fLabels = <?= json_encode(array_map(function($f) {
+    $u = $f['page_url']; return strlen($u)>40?'...'.substr($u,-37):$u;
+}, $formSubmissions)) ?>;
+<?php if (!empty($formSubmissions)): ?>
+new Chart(document.getElementById('formChart'), {
+    type: 'bar',
+    data: {
+        labels: fLabels,
+        datasets: [{ label: 'Submissions', data: <?= json_encode(array_map('intval', array_column($formSubmissions,'cnt'))) ?>, backgroundColor: '#4bc0c0', borderRadius: 4 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false }
+});
+<?php endif; ?>
 
 new Chart(document.getElementById('timeChart'), {
     type: 'line',

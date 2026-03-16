@@ -25,6 +25,8 @@ class ReportController {
         $dailySess   = cached("traffic_daily_$ck",     fn() => Event::getDailySessions($start, $end));
         $devices     = cached("traffic_devices_$ck",   fn() => Event::getDeviceBreakdown($start, $end));
         $connections = cached("traffic_conns_$ck",     fn() => Event::getConnectionTypes($start, $end));
+        $heatmap      = cached("traffic_heatmap_$ck",  fn() => Event::getActivityHeatmap($start, $end));
+        $sessionStats = cached("traffic_sessstats_$ck", fn() => Event::getSessionStats($start, $end));
         $savedReports = Report::getAll(false);
         $savedReports = array_filter($savedReports, fn($r) => $r['category'] === 'traffic');
         require __DIR__ . '/../views/reports/traffic.php';
@@ -34,10 +36,10 @@ class ReportController {
         requireSection('behavioral');
         [$start, $end] = $this->getDates();
         $ck = "b_{$start}_{$end}";
-        $counts     = cached("behav_counts_$ck",  fn() => Event::getBehavioralCounts($start, $end));
-        $clickPages = cached("behav_clicks_$ck",  fn() => Event::getClicksByPage($start, $end));
-        $topKeys    = cached("behav_keys_$ck",    fn() => Event::getTopKeys(15, $start, $end));
-        $byDay      = cached("behav_byday_$ck",   fn() => Event::getBehavioralByDay($start, $end));
+        $counts          = cached("behav_counts_$ck",   fn() => Event::getBehavioralCounts($start, $end));
+        $clickPages      = cached("behav_clicks_$ck",   fn() => Event::getClicksByPage($start, $end));
+        $formSubmissions = cached("behav_forms_$ck",    fn() => Event::getFormSubmissionsByPage($start, $end));
+        $byDay           = cached("behav_byday_$ck",    fn() => Event::getBehavioralByDay($start, $end));
         $clicks        = Event::getClickCoordinates($start, $end);      // not cached — heatmap should always be live
         $clickSessions = Event::getClickSessionsByPage($start, $end);  // sessions per page for legend
         $raw        = Event::getBehavioralRaw(50);
@@ -90,10 +92,10 @@ class ReportController {
             $devices     = Event::getDeviceBreakdown();
             $connections = Event::getConnectionTypes();
         } elseif ($category === 'behavioral') {
-            $counts     = Event::getBehavioralCounts();
-            $clickPages = Event::getClicksByPage();
-            $topKeys    = Event::getTopKeys();
-            $byDay      = Event::getBehavioralByDay();
+            $counts          = Event::getBehavioralCounts();
+            $clickPages      = Event::getClicksByPage();
+            $formSubmissions = Event::getFormSubmissionsByPage();
+            $byDay           = Event::getBehavioralByDay();
         } elseif ($category === 'performance') {
             $byPage  = Event::getPerformanceByPage();
             $summary = Event::getPerformanceSummary();

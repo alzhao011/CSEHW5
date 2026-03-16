@@ -33,19 +33,19 @@ Use superadmin / basicallyProfessor123.
 ### 4. Generate fresh data
 Before exploring the reports, go to https://test.alansdomain.xyz and browse around for a minute. Click things, visit a few pages, type something in the contact form. This generates the events that show up in the reports. Come back to the reporting app when done.
 
-To generate multiple sessions (so the Traffic report shows more than one), open the test site in a few different tabs. Each tab gets its own session ID using sessionStorage, so closing a tab and opening a new one counts as a new session. This is how the platform defines a session.
+To generate multiple sessions (so the Traffic report shows more than one), browse the test site, then wait 30 minutes and browse again — or clear your localStorage between visits. Sessions expire after 30 minutes of inactivity, the same way Google Analytics defines a session.
 
 ### 5. Traffic report
-Go to Reports, then Traffic. You will see total pageviews and sessions at the top, a line chart of sessions over time, a bar chart of pageviews by page, and pie charts for device types and connection types. There is also a raw events table at the bottom. Try using the date range filter at the top and everything on the page will update to that window.
+Go to Reports, then Traffic. You will see total pageviews, sessions, unique pages, and bounce rate at the top. Below that are a line chart of sessions over time, an activity heatmap by hour and day of week, a bar chart of pageviews by URL, and a doughnut chart for device types. There is also a raw page views table at the bottom. Try using the date range filter at the top and everything on the page will update to that window.
 
 ### 6. Behavioral report
-Go to Reports, then Behavioral. Scroll down to the Click Heatmap section. The heatmap loads a live version of the page inside an iframe and draws a canvas overlay on top showing where people clicked. Red means a lot of clicks, yellow means fewer. Use the Prev and Next buttons to switch between tracked pages. The heatmap always shows the latest data and is not cached.
+Go to Reports, then Behavioral. Scroll down to the Click Heatmap section. You will see a placeholder with a **Load Page Preview** button — click it to load a live version of the tracked page inside an iframe. The canvas overlay on top shows where users clicked: red means a lot of clicks, yellow means fewer. Use the Prev and Next buttons to switch between tracked pages. The preview is not loaded automatically to avoid generating phantom tracking events. The click dot data is always fresh and is not cached.
 
 ### 7. Performance report
 Go to Reports, then Performance. The summary cards at the top show average load time, average TTFB (time to first byte), and average DOM ready time across all samples. The bar chart and table below break those numbers down by page.
 
 ### 8. Save a report and try the export
-On any report page scroll down to the Save this Report section. Give it a title, write some comments, check Publish so viewers can see it, and save it. Then go to Saved Reports and click View on the one you just saved. From there you can click Download PDF to download a server-generated PDF file (built using FPDF, a PHP library). It includes the title, analyst comments, summary stats, and data tables. You can also click Save Snapshot to write a static HTML file with a shareable URL.
+On any report page scroll down to the Save this Report section. Give it a title, write some comments, check Publish so viewers can see it, and save it. Then go to Saved Reports and click View on the one you just saved. From there you can click **Download PDF** to download a server-generated PDF file (built using FPDF, a PHP library). It includes the title, analyst comments, summary stats, a chart image, and data tables. You can also click Save Snapshot to write a static HTML file with a shareable URL.
 
 ### 9. Analyst role and section permissions
 Log out and log in as analyst / basicallyTAs123. You will see the analyst's sections listed in the navbar next to the username, for example (analyst:traffic, behavioral). Try navigating to a section the analyst does not have access to by typing the URL directly and you will get a 403.
@@ -62,7 +62,7 @@ Log in as superadmin and go to Admin, then User Management. Scroll to the bottom
 Log back in as superadmin and go to Admin, then User Management. From here you can create a new user, change someone's role, limit an analyst to specific sections, or delete a user. Every form on this page is protected with a CSRF token.
 
 ### 13. PDF export
-Go to Saved Reports and open any saved report. Click "Print / Export PDF". The server generates a PDF using FPDF (a PHP PDF library) and sends it as a download. It includes the report title, analyst comments, summary stats, and data tables. This is a server-generated file, not a browser print dialog.
+Go to Saved Reports and open any saved report. Click **Download PDF**. The browser captures the chart canvas as a PNG, submits it with the request, and the server generates a PDF using FPDF (a PHP PDF library) and sends it as a download. It includes the report title, analyst comments, summary stats, a chart image, and data tables. This is a server-generated file, not a browser print dialog.
 
 ### 14. No-JS fallback
 Disable JavaScript in your browser (Chrome: DevTools, Settings, Debugger, Disable JavaScript) and reload any report page. The charts won't render but the data tables and summary cards are still there. The heatmap shows a text note explaining JavaScript is required for the interactive view.
@@ -71,7 +71,7 @@ Disable JavaScript in your browser (Chrome: DevTools, Settings, Debugger, Disabl
 
 ## Known Limitations and Design Choices
 
-**PDF charts** - The PDF export includes data tables but not the charts. FPDF is a pure PHP library that generates PDFs from code rather than rendering HTML. Adding chart images to the PDF would require either a headless browser (not installed on this server) or a chart-to-image service. The data is still fully represented in table form.
+**PDF charts** - The PDF includes one chart image per report (the main chart from the saved report view). The chart is captured client-side as a PNG from the Chart.js canvas and submitted with the download request. The server embeds it using FPDF's Image() method.
 
 **Heatmap without JS** - The heatmap is entirely dependent on JavaScript canvas drawing. There is no meaningful static fallback for it other than pointing to the raw clicks table below it, which is what we do.
 
@@ -79,6 +79,6 @@ Disable JavaScript in your browser (Chrome: DevTools, Settings, Debugger, Disabl
 
 **Pre-existing accounts have no security questions** - The superadmin and analyst accounts were created directly in the database before the security question system was built. If you try to use "Forgot password" on them you get a message saying to contact the website manager. Only accounts registered through the signup form have security questions set.
 
-**Session storage means tabs are sessions** - Each browser tab gets its own session ID from sessionStorage. This is intentional and matches how most analytics platforms count sessions, but it means power users with lots of open tabs will show inflated session counts compared to a cookie-based approach that persists across tabs.
+**Session definition** - Sessions expire after 30 minutes of inactivity using localStorage. Each event in the collector resets the 30-minute clock. If a user comes back after more than 30 minutes, their next event starts a new session. This matches how Google Analytics defines a session.
 
 **No fallback if all three security questions are forgotten** - Account recovery depends entirely on the user remembering their three security question answers. If they forget all of them there is no secondary path like an email verification link or admin-assisted reset. A super admin can manually reset someone's password from the database, but there is no self-service option. The reason the platform has no email support is that setting up outbound SMTP requires a third-party service (SendGrid, Mailgun, etc.) which was out of scope. Adding email as a second recovery factor is listed in the roadmap.

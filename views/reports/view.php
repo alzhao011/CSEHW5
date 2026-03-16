@@ -1,6 +1,6 @@
 <?php
 $pageTitle = htmlspecialchars($report['title']);
-$extraHead = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>';
+$extraHead = '<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>';
 $role = $_SESSION['role'] ?? '';
 ob_start();
 ?>
@@ -13,7 +13,12 @@ ob_start();
         <small class="text-muted ms-2">by <?= htmlspecialchars($report['author']) ?> on <?= date('M j, Y', strtotime($report['created_at'])) ?></small>
     </div>
     <div>
-        <a href="/export/print?id=<?= $report['id'] ?>" class="btn btn-outline-secondary btn-sm">Download PDF</a>
+        <form id="pdfForm" method="POST" action="/export/print" style="display:inline">
+            <?= csrfField() ?>
+            <input type="hidden" name="id" value="<?= $report['id'] ?>">
+            <div id="pdfChartData"></div>
+            <button type="button" id="pdfBtn" class="btn btn-outline-secondary btn-sm">Download PDF</button>
+        </form>
         <?php if (in_array($role, ['super_admin','analyst'])): ?>
         <form method="POST" action="/export/save" class="d-inline">
         <?= csrfField() ?>
@@ -59,7 +64,7 @@ new Chart(document.getElementById('sessChart'),{type:'line',data:{labels:<?= jso
 <div class="row mb-4">
     <div class="col-md-3"><div class="card text-center p-3"><h4><?= number_format($countMap['click']??0) ?></h4><small class="text-muted">Clicks</small></div></div>
     <div class="col-md-3"><div class="card text-center p-3"><h4><?= number_format($countMap['mousemove']??0) ?></h4><small class="text-muted">Mouse Moves</small></div></div>
-    <div class="col-md-3"><div class="card text-center p-3"><h4><?= number_format($countMap['keydown']??0) ?></h4><small class="text-muted">Keystrokes</small></div></div>
+    <div class="col-md-3"><div class="card text-center p-3"><h4><?= number_format($countMap['submit']??0) ?></h4><small class="text-muted">Form Submissions</small></div></div>
 </div>
 <div class="card p-3 mb-4"><h5>Interaction Breakdown</h5><div style="height:300px"><canvas id="bChart"></canvas></div></div>
 <div class="card p-3 mb-4"><h5>Clicks by Page</h5>
@@ -67,7 +72,9 @@ new Chart(document.getElementById('sessChart'),{type:'line',data:{labels:<?= jso
 <?php foreach ($clickPages as $cp): ?><tr><td class="truncate"><?= htmlspecialchars($cp['page_url']) ?></td><td><?= $cp['clicks'] ?></td></tr><?php endforeach; ?>
 </tbody></table></div>
 <script>
-new Chart(document.getElementById('bChart'),{type:'pie',data:{labels:<?= json_encode(array_column($counts,'event_type')) ?>,datasets:[{data:<?= json_encode(array_map('intval',array_column($counts,'cnt'))) ?>,backgroundColor:['#ff6384','#36a2eb','#ffce56']}]},options:{responsive:true,maintainAspectRatio:false}});
+var bTypeMap={'click':'#ff6384','mousemove':'#36a2eb','submit':'#4bc0c0'};
+var bLabels=<?= json_encode(array_column($counts,'event_type')) ?>;
+new Chart(document.getElementById('bChart'),{type:'pie',data:{labels:bLabels,datasets:[{data:<?= json_encode(array_map('intval',array_column($counts,'cnt'))) ?>,backgroundColor:bLabels.map(function(t){return bTypeMap[t]||'#aaa';})}]},options:{responsive:true,maintainAspectRatio:false}});
 </script>
 
 <?php elseif ($report['category'] === 'performance'): ?>
@@ -101,6 +108,29 @@ new Chart(document.getElementById('loadChart'),{type:'bar',data:{labels:<?= json
 </script>
 
 <?php endif; ?>
+
+<script>
+document.getElementById('pdfBtn').addEventListener('click', function () {
+    var container = document.getElementById('pdfChartData');
+    container.innerHTML = '';
+    document.querySelectorAll('canvas').forEach(function (canvas) {
+        // Draw onto a white-background copy to avoid transparency issues in FPDF
+        var tmp = document.createElement('canvas');
+        tmp.width  = canvas.width;
+        tmp.height = canvas.height;
+        var tctx = tmp.getContext('2d');
+        tctx.fillStyle = '#ffffff';
+        tctx.fillRect(0, 0, tmp.width, tmp.height);
+        tctx.drawImage(canvas, 0, 0);
+        var input = document.createElement('input');
+        input.type  = 'hidden';
+        input.name  = 'charts[]';
+        input.value = tmp.toDataURL('image/png');
+        container.appendChild(input);
+    });
+    document.getElementById('pdfForm').submit();
+});
+</script>
 
 <?php
 $content = ob_get_clean();
