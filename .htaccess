@@ -1,0 +1,11 @@
+RewriteEngine On
+
+# Set index.php as the directory index
+DirectoryIndex index.php
+
+# Route all requests through index.php (except real static files like .js, .css, .png)
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteCond %{REQUEST_URI} !\.php$
+RewriteRule ^ - [L]
+
+RewriteRule ^(.*)$ index.php?route=$1 [QSA,L]
